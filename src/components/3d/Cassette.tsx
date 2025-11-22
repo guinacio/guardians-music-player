@@ -28,7 +28,7 @@ export const Cassette: React.FC<CassetteProps> = ({
         <group 
             position={position}
             rotation={rotation}
-            scale={isSelected ? scale * 1.2 : scale}
+            scale={scale}
         >
             <mesh 
                 ref={meshRef}
