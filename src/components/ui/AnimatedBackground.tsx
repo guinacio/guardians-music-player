@@ -31,22 +31,22 @@ export const AnimatedBackground: React.FC = () => {
         // Animation loop - optimized
         const animate = (currentTime: number) => {
             animationId = requestAnimationFrame(animate);
-            
+
             const deltaTime = currentTime - lastTime;
             if (deltaTime < frameDelay) return; // Throttle to 30 FPS
-            
+
             lastTime = currentTime - (deltaTime % frameDelay);
 
             const w = window.innerWidth;
             const h = window.innerHeight;
-            
+
             ctx.clearRect(0, 0, w, h);
 
             // Simplified grid
             const gridSize = 60;
             const horizon = h * 0.45;
-            
-            gridOffset = (gridOffset + 1.5) % gridSize;
+
+            gridOffset = (gridOffset + 0.5) % gridSize;
 
             // Draw horizontal lines (less lines, no shadows)
             ctx.strokeStyle = 'rgba(224, 122, 95, 0.25)';
