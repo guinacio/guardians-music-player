@@ -21,8 +21,7 @@ export const Overlay: React.FC = () => {
     };
 
     return (
-        <>
-            {/* Header */}
+        <div className="overlay-container">
             <div className="overlay-header">
                 <h1 className="overlay-title">
                     GUARDIANS PLAYER
@@ -34,6 +33,10 @@ export const Overlay: React.FC = () => {
                 <p className="overlay-subtitle">
                     TPS-L2 REPLICA
                 </p>
+
+                <div className="mobile-info-message">
+                    Best viewed on desktop
+                </div>
             </div>
 
             {/* Now Playing Card */}
@@ -95,6 +98,6 @@ export const Overlay: React.FC = () => {
                     ← CLICK A CASSETTE TO BEGIN →
                 </p>
             </div>
-        </>
+        </div>
     );
 };

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { usePlayerStore, Mixtape } from '../../store/usePlayerStore';
 import { Cassette } from './Cassette';
 import { TapeWheel } from './TapeWheel';
@@ -6,8 +6,9 @@ import { TapeWheel } from './TapeWheel';
 import hookedOnAFeeling from '../../assets/hooked_on_a_feeling.mp3';
 // @ts-ignore
 import mrBlueSky from '../../assets/mr_blue_sky.mp3';
-import { Text } from '@react-three/drei';
-import { CanvasTexture } from 'three';
+import { Text, useScroll } from '@react-three/drei';
+import { CanvasTexture, Group } from 'three';
+import { useThree, useFrame } from '@react-three/fiber';
 
 const MOCK_MIXTAPES: Mixtape[] = [
     {
@@ -44,15 +45,15 @@ const createBrushedMetalTexture = () => {
         const y = Math.random() * 128;
         const opacity = Math.random() * 0.4 + 0.15;
         const isDark = Math.random() > 0.6;
-        
+
         // More dramatic dark and light scratches
-        ctx.strokeStyle = isDark 
-            ? `rgba(30, 35, 40, ${opacity})` 
+        ctx.strokeStyle = isDark
+            ? `rgba(30, 35, 40, ${opacity})`
             : `rgba(200, 210, 220, ${opacity})`;
         ctx.lineWidth = Math.random() * 2 + 0.2;
         ctx.beginPath();
         ctx.moveTo(0, y);
-        
+
         // Slightly wavy lines like real steel wool scratches
         for (let x = 0; x < 512; x += 20) {
             const wave = Math.sin(x * 0.1 + i) * 0.5;
@@ -89,19 +90,46 @@ const createBrushedMetalTexture = () => {
 
 export const MixtapeShelf3D: React.FC = () => {
     const { loadMixtape, currentMixtape, isPlaying } = usePlayerStore();
-    
+    const { viewport } = useThree();
+    const isMobile = viewport.width < 8; // Adjust threshold as needed
+    const scroll = useScroll();
+    const groupRef = useRef<Group>(null);
+
     // Create brushed metal texture once
     const metalTexture = useMemo(() => createBrushedMetalTexture(), []);
 
+    useFrame(() => {
+        if (isMobile && groupRef.current && scroll) {
+            // Move the shelf up as user scrolls down
+            // scroll.offset goes from 0 to 1
+            // We want to move it up by some amount, say viewport height * 1.5
+            groupRef.current.position.y = scroll.offset * (viewport.height * 1.5);
+        } else if (groupRef.current) {
+            groupRef.current.position.y = 0;
+        }
+    });
+
     return (
-        <group>
+        <group ref={groupRef}>
             {MOCK_MIXTAPES.map((tape, index) => {
-                // Position tapes on left and right sides of the walkman
-                const xPos = index === 0 ? -4 : 4; // Left side or right side
+                // Position tapes on left and right sides of the walkman on desktop
+                // On mobile, stack them vertically below the walkman
+                let position: [number, number, number];
+
+                if (isMobile) {
+                    // Vertical stack below
+                    // Start from y = -3.5 and go down
+                    position = [0, -3.5 - (index * 2.8), 0];
+                } else {
+                    // Horizontal sides
+                    const xPos = index === 0 ? -4 : 4;
+                    position = [xPos, 0, 0];
+                }
+
                 const isSelected = currentMixtape?.id === tape.id;
-                
+
                 return (
-                    <group key={tape.id} position={[xPos, 0, 0]}>
+                    <group key={tape.id} position={position}>
                         {/* Group cassette and wheels together so they scale together when selected */}
                         <group scale={isSelected ? 1.2 : 1}>
                             <Cassette
@@ -112,41 +140,41 @@ export const MixtapeShelf3D: React.FC = () => {
                                 onClick={() => loadMixtape(tape)}
                                 isSelected={isSelected}
                             />
-                            
+
                             {/* Tape wheels inside cassette holes */}
-                            <TapeWheel 
-                                position={[-0.43, -0.8, 0]} 
+                            <TapeWheel
+                                position={[-0.43, -0.8, 0]}
                                 isPlaying={isSelected && isPlaying}
                                 speed={1}
                             />
-                            <TapeWheel 
+                            <TapeWheel
                                 position={[0.19, -0.8, 0]}
                                 isPlaying={isSelected && isPlaying}
                                 speed={1.2}
                             />
                         </group>
-                        
+
                         {/* Background plate for text - brushed metal */}
                         <mesh position={[0, -1.8, 0]} rotation={[0, 0, 0]}>
                             <planeGeometry args={[3.2, 0.6]} />
-                            <meshStandardMaterial 
+                            <meshStandardMaterial
                                 map={metalTexture}
                                 color="#ffffff"
                                 roughness={0.6}
                                 metalness={0.75}
                             />
                         </mesh>
-                        
+
                         {/* Metal label border - darker gray */}
                         <mesh position={[0, -1.8, -0.01]} rotation={[0, 0, 0]}>
                             <planeGeometry args={[3.3, 0.7]} />
-                            <meshStandardMaterial 
+                            <meshStandardMaterial
                                 color="#3a3e45"
                                 roughness={0.7}
                                 metalness={0.7}
                             />
                         </mesh>
-                        
+
                         {/* Mixtape title - engraved look on metal */}
                         <Text
                             position={[0, -1.8, 0.05]}
@@ -161,11 +189,11 @@ export const MixtapeShelf3D: React.FC = () => {
                         >
                             {tape.title}
                         </Text>
-                        
+
                         {/* Metal corner pins/screws */}
                         <mesh position={[-1.5, -1.5, 0.02]} rotation={[Math.PI / 2, 0, 0]}>
                             <cylinderGeometry args={[0.06, 0.06, 0.04, 16]} />
-                            <meshStandardMaterial 
+                            <meshStandardMaterial
                                 color="#6b7280"
                                 metalness={0.9}
                                 roughness={0.3}
@@ -173,7 +201,7 @@ export const MixtapeShelf3D: React.FC = () => {
                         </mesh>
                         <mesh position={[1.5, -1.5, 0.02]} rotation={[Math.PI / 2, 0, 0]}>
                             <cylinderGeometry args={[0.06, 0.06, 0.04, 16]} />
-                            <meshStandardMaterial 
+                            <meshStandardMaterial
                                 color="#6b7280"
                                 metalness={0.9}
                                 roughness={0.3}
@@ -181,7 +209,7 @@ export const MixtapeShelf3D: React.FC = () => {
                         </mesh>
                         <mesh position={[-1.5, -2.1, 0.02]} rotation={[Math.PI / 2, 0, 0]}>
                             <cylinderGeometry args={[0.06, 0.06, 0.04, 16]} />
-                            <meshStandardMaterial 
+                            <meshStandardMaterial
                                 color="#6b7280"
                                 metalness={0.9}
                                 roughness={0.3}
@@ -189,28 +217,28 @@ export const MixtapeShelf3D: React.FC = () => {
                         </mesh>
                         <mesh position={[1.5, -2.1, 0.02]} rotation={[Math.PI / 2, 0, 0]}>
                             <cylinderGeometry args={[0.06, 0.06, 0.04, 16]} />
-                            <meshStandardMaterial 
+                            <meshStandardMaterial
                                 color="#6b7280"
                                 metalness={0.9}
                                 roughness={0.3}
                             />
                         </mesh>
-                        
+
                         {/* Selection indicator */}
                         {isSelected && (
                             <>
                                 <mesh position={[-1.6, -1.8, 0.1]} rotation={[0, 0, Math.PI / 4]}>
                                     <boxGeometry args={[0.15, 0.15, 0.02]} />
-                                    <meshStandardMaterial 
-                                        color="#00ff00" 
+                                    <meshStandardMaterial
+                                        color="#00ff00"
                                         emissive="#00ff00"
                                         emissiveIntensity={0.8}
                                     />
                                 </mesh>
                                 <mesh position={[1.6, -1.8, 0.1]} rotation={[0, 0, Math.PI / 4]}>
                                     <boxGeometry args={[0.15, 0.15, 0.02]} />
-                                    <meshStandardMaterial 
-                                        color="#00ff00" 
+                                    <meshStandardMaterial
+                                        color="#00ff00"
                                         emissive="#00ff00"
                                         emissiveIntensity={0.8}
                                     />
