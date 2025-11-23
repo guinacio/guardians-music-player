@@ -1,6 +1,6 @@
 import React from 'react';
 import { Canvas } from '@react-three/fiber';
-import { OrbitControls } from '@react-three/drei';
+import { OrbitControls, Environment } from '@react-three/drei';
 import { Walkman } from './Walkman';
 import { MixtapeShelf3D } from './MixtapeShelf3D';
 
@@ -50,6 +50,9 @@ export const Scene: React.FC = () => {
                 distance={12}
             />
 
+            {/* Environment for reflections - using local HDR file */}
+            <Environment files="/venice_sunset_1k.hdr" />
+            
             {/* Subtle fog for depth */}
             <fog attach="fog" args={['#1a1a1a', 15, 30]} />
 
