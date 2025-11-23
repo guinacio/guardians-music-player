@@ -3,16 +3,9 @@ import { Canvas } from '@react-three/fiber';
 import { PresentationControls, Environment, ScrollControls } from '@react-three/drei';
 import { Walkman } from './Walkman';
 import { MixtapeShelf3D } from './MixtapeShelf3D';
+import { MouseZoom } from './MouseZoom';
 
 export const Scene: React.FC = () => {
-    // We need to access viewport in a child component to determine isMobile for ScrollControls pages
-    // But ScrollControls needs to be inside Canvas. 
-    // A common pattern is to pass a prop or handle it inside a wrapper, but here we can just use a fixed value or a hook if we split components.
-    // For simplicity, let's assume mobile is < 768px width roughly mapped to viewport units.
-    // Better yet, let's make a wrapper component inside Canvas to handle logic if needed, 
-    // OR just use a safe default and let MixtapeShelf handle the actual movement.
-    // However, ScrollControls `pages` prop determines the scrollable area.
-
     return (
         <Canvas
             camera={{ position: [0, 0, 10], fov: 50 }}
@@ -74,6 +67,7 @@ export const Scene: React.FC = () => {
             </PresentationControls>
 
             <ScrollWrapper />
+            <MouseZoom />
         </Canvas>
     );
 };
@@ -84,9 +78,13 @@ const ScrollWrapper: React.FC = () => {
     const { viewport } = useThree();
     const isMobile = viewport.width < 8;
 
-    return (
-        <ScrollControls pages={isMobile ? 2 : 0} damping={0.2} style={{ zIndex: 0 }}>
-            <MixtapeShelf3D />
-        </ScrollControls>
-    );
+    if (isMobile) {
+        return (
+            <ScrollControls pages={2} damping={0.2} style={{ zIndex: 0 }}>
+                <MixtapeShelf3D />
+            </ScrollControls>
+        );
+    }
+
+    return <MixtapeShelf3D />;
 }
