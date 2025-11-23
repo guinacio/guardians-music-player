@@ -3,7 +3,7 @@ import { usePlayerStore } from '../../store/usePlayerStore';
 
 export const AudioController: React.FC = () => {
   const audioRef = useRef<HTMLAudioElement | null>(null);
-  const { isPlaying, currentTrack, volume, nextTrack, pause, setProgress } = usePlayerStore();
+  const { isPlaying, currentTrack, volume, nextTrack, pause, setProgress, seekRequest, seekTo, clearSeekRequest } = usePlayerStore();
 
   // Initialize audio element
   useEffect(() => {
@@ -11,7 +11,11 @@ export const AudioController: React.FC = () => {
     audioRef.current.preload = 'auto';
 
     const handleEnded = () => {
-      nextTrack();
+      pause();
+      seekTo(0);
+      if (audioRef.current) {
+        audioRef.current.currentTime = 0;
+      }
     };
 
     const handleError = (e: Event) => {
@@ -27,7 +31,19 @@ export const AudioController: React.FC = () => {
 
     const handleLoadedMetadata = () => {
       if (audioRef.current) {
-        setProgress(audioRef.current.currentTime, audioRef.current.duration || 0);
+        const duration = audioRef.current.duration;
+        if (duration && !isNaN(duration) && duration !== Infinity) {
+          setProgress(audioRef.current.currentTime, duration);
+        }
+      }
+    };
+
+    const handleLoadedData = () => {
+      if (audioRef.current) {
+        const duration = audioRef.current.duration;
+        if (duration && !isNaN(duration) && duration !== Infinity) {
+          setProgress(audioRef.current.currentTime, duration);
+        }
       }
     };
 
@@ -35,6 +51,7 @@ export const AudioController: React.FC = () => {
     audioRef.current.addEventListener('error', handleError);
     audioRef.current.addEventListener('timeupdate', handleTimeUpdate);
     audioRef.current.addEventListener('loadedmetadata', handleLoadedMetadata);
+    audioRef.current.addEventListener('loadeddata', handleLoadedData);
 
     return () => {
       if (audioRef.current) {
@@ -42,11 +59,20 @@ export const AudioController: React.FC = () => {
         audioRef.current.removeEventListener('error', handleError);
         audioRef.current.removeEventListener('timeupdate', handleTimeUpdate);
         audioRef.current.removeEventListener('loadedmetadata', handleLoadedMetadata);
+        audioRef.current.removeEventListener('loadeddata', handleLoadedData);
         audioRef.current.pause();
         audioRef.current = null;
       }
     };
-  }, [nextTrack, pause, setProgress]);
+  }, [nextTrack, pause, setProgress, seekTo]);
+
+  // Handle Seek Request
+  useEffect(() => {
+    if (audioRef.current && seekRequest !== null) {
+      audioRef.current.currentTime = seekRequest;
+      clearSeekRequest();
+    }
+  }, [seekRequest, clearSeekRequest]);
 
   // Handle Track Changes
   useEffect(() => {

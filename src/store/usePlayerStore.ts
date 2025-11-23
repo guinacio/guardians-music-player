@@ -23,12 +23,15 @@ interface PlayerState {
 
   currentTime: number;
   duration: number;
+  seekRequest: number | null;
 
   play: () => void;
   pause: () => void;
   togglePlay: () => void;
   setVolume: (volume: number) => void;
   setProgress: (currentTime: number, duration: number) => void;
+  seekTo: (time: number) => void;
+  clearSeekRequest: () => void;
   loadMixtape: (mixtape: Mixtape) => void;
   playTrack: (track: Track) => void;
   nextTrack: () => void;
@@ -43,11 +46,15 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   currentTime: 0,
   duration: 0,
 
+  seekRequest: null,
+
   play: () => set({ isPlaying: true }),
   pause: () => set({ isPlaying: false }),
   togglePlay: () => set((state) => ({ isPlaying: !state.isPlaying })),
   setVolume: (volume) => set({ volume }),
   setProgress: (currentTime, duration) => set({ currentTime, duration }),
+  seekTo: (time) => set({ seekRequest: time }),
+  clearSeekRequest: () => set({ seekRequest: null }),
 
   loadMixtape: (mixtape) => {
     set({
@@ -55,11 +62,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       currentTrack: mixtape.tracks[0] || null,
       isPlaying: false, // Auto-play can be optional
       currentTime: 0,
-      duration: 0
+      duration: 0,
+      seekRequest: null
     });
   },
 
-  playTrack: (track) => set({ currentTrack: track, isPlaying: true, currentTime: 0, duration: 0 }),
+  playTrack: (track) => set({ currentTrack: track, isPlaying: true, currentTime: 0, duration: 0, seekRequest: null }),
 
   nextTrack: () => {
     const { currentMixtape, currentTrack } = get();
@@ -67,7 +75,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
     const currentIndex = currentMixtape.tracks.findIndex(t => t.id === currentTrack.id);
     const nextIndex = (currentIndex + 1) % currentMixtape.tracks.length;
-    set({ currentTrack: currentMixtape.tracks[nextIndex], currentTime: 0, duration: 0 });
+    set({ currentTrack: currentMixtape.tracks[nextIndex], currentTime: 0, duration: 0, seekRequest: null });
   },
 
   prevTrack: () => {
@@ -76,6 +84,6 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
     const currentIndex = currentMixtape.tracks.findIndex(t => t.id === currentTrack.id);
     const prevIndex = (currentIndex - 1 + currentMixtape.tracks.length) % currentMixtape.tracks.length;
-    set({ currentTrack: currentMixtape.tracks[prevIndex], currentTime: 0, duration: 0 });
+    set({ currentTrack: currentMixtape.tracks[prevIndex], currentTime: 0, duration: 0, seekRequest: null });
   }
 }));

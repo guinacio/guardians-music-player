@@ -3,13 +3,21 @@ import { usePlayerStore } from '../../store/usePlayerStore';
 import '../../styles/overlay.css';
 
 export const Overlay: React.FC = () => {
-    const { currentTrack, isPlaying, currentMixtape, currentTime, duration } = usePlayerStore();
+    const { currentTrack, isPlaying, currentMixtape, currentTime, duration, seekTo } = usePlayerStore();
 
     const formatTime = (time: number) => {
         if (!time || isNaN(time)) return '0:00';
         const minutes = Math.floor(time / 60);
         const seconds = Math.floor(time % 60);
         return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    };
+
+    const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+        if (!duration) return;
+        const rect = e.currentTarget.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const percentage = Math.min(Math.max(x / rect.width, 0), 1);
+        seekTo(percentage * duration);
     };
 
     return (
@@ -57,11 +65,17 @@ export const Overlay: React.FC = () => {
                     </div>
 
                     {/* Progress Bar */}
-                    <div className="progress-container">
+                    <div
+                        className="progress-container"
+                        onClick={handleSeek}
+                        style={{ cursor: 'pointer' }}
+                    >
                         <div
                             className="progress-bar"
                             style={{ width: `${(currentTime / duration) * 100}%` }}
-                        ></div>
+                        >
+                            <div className="progress-handle"></div>
+                        </div>
                     </div>
 
                     {/* Time Display */}
