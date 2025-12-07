@@ -95,7 +95,7 @@ export const Overlay: React.FC = () => {
                 style={{ opacity: currentTrack ? 0 : 1 }}
             >
                 <p className="instructions-text">
-                    ← CLICK A CASSETTE TO BEGIN →
+                    ← CLICK A TAPE TO BEGIN →
                 </p>
             </div>
         </div>
